@@ -1,6 +1,36 @@
 ----------------------------------------------------------------------------
+--Kripke model
+----------------------------------------------------------------------------
+--kripke frame represented by adjacency list
+-- -> for example turnstile state machine
+          __  _______<_______  __
+         /  \/               \/  \  
+        v   1                2    v 
+         \__/\_______>_______/\__/
+
+frame = [(1, [1,2]),(2, [2,1])]
+
+--labeling function
+labeling node 
+  | node == 1 = "locked"
+  | node == 2 = "unlocked"
+----------------------------------------------------------------------------
 --Object of first-order types
 ----------------------------------------------------------------------------
+myfind predicate [] = (3, [4,5])
+myfind predicate (x:xs) 
+  | predicate x = x
+  | otherwise = myfind predicate xs 
+
+-- possible worlds implementation
+worlds frame initial_state = [initial_state] : next (worlds frame initial_state)
+  where
+  next (a:r@(_)) = (map (\n -> a ++ [n]) neigbours) ++ next r
+    where
+    looked_for = last a
+    node = myfind (\node -> fst node == looked_for) frame
+    neigbours = snd node
+
 next :: Int -> Int
 next = \t -> (+) t 1
 
