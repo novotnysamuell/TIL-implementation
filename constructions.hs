@@ -265,3 +265,4 @@ exec2 = \c -> c True
 --(\dummy -> \x -> (comp (triv next) x)) True (triv 1) True
 --(clos (\x -> (comp (triv next) x))) True
 --e = (clos (\p -> (clos (\w1 -> (clos (\t -> (comp1 (triv exists_w) (clos (\w2 -> (comp2 (triv (&&)) (comp2 (triv (==)) (comp1 (comp1 (triv w_moment) (w1)) (t)) (comp1 (comp1 (triv w_moment) (w2)) (t))) (comp1 (comp1 (p) (w2)) (t))))))))))))
+--(comp1 (exec2 (triv future)) (clos (\w-> (clos (\t -> (comp1 (comp1 (triv locked) w) t)))))) True [1,2,2] 0
