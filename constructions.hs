@@ -33,14 +33,46 @@ time_moments = 0 : next time_moments
   next (a:r@(_)) = (a+1) : next r
 
 -- ->possible worlds implementation
-possible_worlds = possible_worlds_from_frame frame initial_state
+{- possible_worlds = possible_worlds_from_frame frame initial_state
 possible_worlds_from_frame frame initial_state = [initial_state] : next (possible_worlds_from_frame frame initial_state)
   where
   next (a:r@(_)) = (map (\n -> a ++ [n]) neigbours) ++ next r
     where
     looked_for = last a
     node = myfind (\node -> fst node == looked_for) frame
-    neigbours = snd node
+    neigbours = snd node -}
+{- 
+possible_worlds = (1: (next_w_moment (head possible_worlds))) : (next_world 0 (head possible_worlds))
+  where
+  next_w_moment (a:r) = (head (neighbours a)) : next_w_moment r
+  neighbours a = snd (myfind (\node -> fst node == a) frame)  
+  next_world idx world@(a:r) = halo ++ concat(map (next_world (idx+1)) halo)
+    where
+    halo = (map (\n -> (take (idx + 1) world) ++ [n] ++ next_w_moment (drop (idx + 2) world)) (tail (neighbours a))) 
+ -}
+
+{- 
+possible_worlds = (1: (next_w_moment (head possible_worlds))) : (next_world 0 possible_worlds)
+  where
+  next_w_moment [] = []
+  next_w_moment (a:r) = (head (neighbours a)) : (next_w_moment r)
+  neighbours a = snd (myfind (\node -> fst node == a) frame)
+  next_world idx possible_worlds = concat (map (\world -> halo idx world) possible_worlds) ++ next_world (idx+1) possible_worlds
+    where
+    halo idx world = (map (\n -> (take (idx + 1) world) ++ [n] ++ next_w_moment [n]) (tail (neighbours (world !! idx)))) 
+ -}
+
+possible_worlds = (1: (next_w_moment (head possible_worlds) 0)) : (next_world 0 possible_worlds 1)
+  where
+  next_w_moment world idx = (head (neighbours (world !! idx))) : (next_w_moment world (idx+1))
+  neighbours a = snd (myfind (\node -> fst node == a) frame)
+  next_world idx possible_worlds num = new_w ++ next_world (idx+1) possible_worlds (length new_w + num)
+    where
+    new_w = concat (map (\world -> halo idx world) (take num possible_worlds))
+    halo idx world = (map help (tail (neighbours (world !! idx)))) 
+      where
+      help n = (take (idx + 1) world) ++ [n] ++ (next_w_moment (help n) (idx+1)) 
+
 
 myfind predicate [] = (3, [4,5])
 myfind predicate (x:xs) 
