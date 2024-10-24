@@ -9,7 +9,7 @@ import Data.List
 --      v   1                2    v 
 --       \__/\_______>_______/\__/
 
-frame = [(1, [1,2]),(2, [2,1])]
+frame = [(1, [1,2]),(2, [2,1])] --[(1,[2,3,4]),(2,[4]),(3,[]),(4,[3])]
 initial_state = 1
 
 --labeling functions
@@ -61,15 +61,26 @@ possible_worlds = (1: (next_w_moment (head possible_worlds))) : (next_world 0 po
     where
     halo idx world = (map (\n -> (take (idx + 1) world) ++ [n] ++ next_w_moment [n]) (tail (neighbours (world !! idx)))) 
  -}
+at xs n | n < 0 = False
+at [] _ =  False
+at (x:_) 0 =  True
+at (_:xs) n =  xs `at` (n-1)
 
 possible_worlds = (1: (next_w_moment (head possible_worlds) 0)) : (next_world 0 possible_worlds 1)
   where
-  next_w_moment world idx = (head (neighbours (world !! idx))) : (next_w_moment world (idx+1))
+  next_w_moment world idx 
+    | null (neighbours (world !! idx)) = []
+    | otherwise = (head (neighbours (world !! idx))) : (next_w_moment world (idx+1))
   neighbours a = snd (myfind (\node -> fst node == a) frame)
-  next_world idx possible_worlds num = new_w ++ next_world (idx+1) possible_worlds (length new_w + num)
+  next_world idx possible_worlds num 
+    | any (`at` (idx+1)) (take num possible_worlds) = new_w ++ next_world (idx+1) possible_worlds (length new_w + num)
+    | otherwise = new_w
     where
     new_w = concat (map (\world -> halo idx world) (take num possible_worlds))
-    halo idx world = (map help (tail (neighbours (world !! idx)))) 
+    halo idx world 
+      | not (world `at` idx) = []
+      | null (neighbours (world !! idx)) = []
+      | otherwise = (map help (tail (neighbours (world !! idx)))) 
       where
       help n = (take (idx + 1) world) ++ [n] ++ (next_w_moment (help n) (idx+1)) 
 
@@ -96,26 +107,16 @@ implies :: Bool -> Bool -> Bool
 implies = \o1 -> \o2 -> not o1 || o2
 
 -- ->forAll function implementation of logical universal quantifier 
-forAll :: (a -> Bool) -> [a] -> Bool -> Bool
-forAll f domain False = False -- initial value for aggregation True
-forAll f [] aggregation = aggregation
-forAll f (x:xs) aggregation = forAll f xs ((&&) aggregation (f x))
-
 forAll_t :: (Int -> Bool) -> Bool
-forAll_t = \f -> forAll f time_moments True
+forAll_t = \f -> all f time_moments
 --forAll_w :: ([] -> Bool) -> Bool
-forAll_w = \f -> forAll f possible_worlds True
+forAll_w = \f -> all f possible_worlds
 
 -- ->exists function implementation of logical existential quantifier 
-exists :: (a -> Bool) -> [a] -> Bool -> Bool
-exists f domain True = True -- initial value for aggregation False
-exists f [] aggregation = aggregation
-exists f (x:xs) aggregation = exists f xs ((||) aggregation (f x))
-
 exists_t :: (Int -> Bool) -> Bool
-exists_t = \f -> exists f time_moments False
+exists_t = \f -> any f time_moments
 --exists_w :: ([] -> Bool) -> Bool
-exists_w = \f -> exists f possible_worlds False
+exists_w = \f -> any f possible_worlds
 
 -- ->intensional base
 locked = \w -> \t -> elem "locked" (labeling_nodes (w !! t))
